@@ -1,0 +1,86 @@
+---
+title: "Alternative Fuel Stations"
+author: "Robert Dellinger"
+date: "3/1/2022"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    theme: cerulean
+---
+
+# Introduction
+
+The data this week comes from [US_DOT](https://data-usdot.opendata.arcgis.com/datasets/usdot::alternative-fueling-stations/about) 
+
+# Library 
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(janitor)
+library(gridExtra)
+```
+
+# Inspect the Data
+
+```{r, warning = FALSE, message = FALSE}
+
+stations.csv <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv") %>%
+  janitor::clean_names() #clean names using janiot package
+
+stations.csv %>% glimpse() #glimpse the data
+
+```
+
+# Clean The Data
+```{r}
+
+stations <- stations.csv %>% 
+  janitor::clean_names() %>% 
+  filter(country == "US") %>% #filter by U.S.
+  filter(access_code == "public") %>% #filter by public
+  mutate(fuel_type_code = case_when(
+    fuel_type_code == "ELEC" ~ "Electric",
+    fuel_type_code == "LNG" | fuel_type_code == "CNG"  ~ "Natural Gas",
+    fuel_type_code == "BD" ~ "Biodiesel",
+    fuel_type_code == "HY" ~ "Hydrogen",
+    fuel_type_code == "E85" ~ "Ethanol",
+    fuel_type_code == "LPG" ~ "Propane",
+    TRUE ~ fuel_type_code)) #change code name to fuel type
+
+stations <- stations %>% 
+  group_by(fuel_type_code) %>% #group by fuel type
+  tally() #count total number
+
+```
+
+
+# Plotting Figure
+
+```{r stations.plot, echo=FALSE}
+
+
+stations.plot <- stations %>%
+  ggplot(aes(x = fuel_type_code, y = n, fill=fuel_type_code)) + #graph charging stations by energy type  
+  geom_bar(position="dodge", stat='identity') +
+labs(title = "Public Vehicle Charging Stations in The United States", subtitle = "Difference by Energy Type", 
+       x = "Energy Type", y = "Total Number of Charging Stations", fill="Energy Type",
+       caption = "Data: U.S. Department of Transportation
+       Created by: Robert Dellinger") + #creating labels
+  theme_linedraw()+ 
+  theme(text=element_text(family="Helvetica"),
+        title = element_text(size = 10), 
+        axis.title = element_text(size = 10), 
+        panel.background = element_rect(fill = "white")) # text sizes and color
+
+
+stations.plot
+
+
+```
+
+
+
+# Thomas Mock (2022). Tidy Tuesday: A weekly data project aimed at the R ecosystem. https://github.com/rfordatascience/tidytuesday.
+
