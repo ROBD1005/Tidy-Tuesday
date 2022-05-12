@@ -1,0 +1,72 @@
+---
+title: "Global Seafood"
+author: "Robert Dellinger"
+date: "5/01/2022"
+output: html_document
+---
+
+#Load Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(magick)
+library(grid)
+library(extrafont)
+library(sf)
+library(cowplot)
+library(rfisheries)
+library(see)
+library(ggplot2)
+
+```
+
+# Download Data
+
+```{r, Global Seafood Data, include= FALSE}
+
+production <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-12/seafood-and-fish-production-thousand-tonnes.csv')
+
+
+```
+
+#Data Wrangling
+
+```{r}
+colnames(production) <- c("Entity","Code", "Year", "Pelagic Fish", "Crustaceans", "Cephalopods", "Demersal Fish", "Freshwater Fish", "Molluscs", "Other") # changing column names
+
+fisheries.production <- production %>% #cleaning data
+  pivot_longer(cols=4:10, names_to = "Seafood_Type", values_to = "Tonnes") %>% #pivoting
+  group_by(Year, Seafood_Type) %>% #grouping by seafood types and counting the sum
+  summarise(Total_Catch = sum(Tonnes, na.rm=TRUE))
+```
+
+
+# Creating a Fisheries Plot
+```{r, Fisheries Catch Figure}
+
+ggplot(fisheries.production, aes(x=Year, y=Total_Catch, fill=Seafood_Type)) + 
+  geom_area() + 
+  coord_cartesian(expand = FALSE) +
+  scale_y_continuous(label = scales::label_number_si()) + 
+  see::scale_color_material_d(name = "Seafood_Type")+ #colorscale
+  labs(x="Year", y="Tonnes/Year", title= "Global Seafood Catch Per Year (Tonnes)",
+       subtitle ="Data Visualization by Rob Dellinger") + #labels
+  theme_minimal() + #minimal theme
+  theme(panel.background = element_rect(fill = "black", color="black"), #background color
+        plot.background = element_rect(fill = "black", color="black"),
+        plot.title = element_text(color = "white", size=15, family="sans", hjust = 0.25),
+        plot.margin = unit(c(0.5, 1, 0.5, 1), "cm"), #top, right, bottom, left
+        legend.background = element_rect(fill = "black", color="transparent"),
+        legend.text = element_text(color = "white", size=8, family="sans"),
+        legend.title = element_text(color = "white", size=10, family="sans"),
+        legend.position="bottom", #legend poisiton bottom
+        legend.box.just = "center", #adjusting legend
+        axis.title= element_text(color = "white", size=12, hjust = 0.5, family="sans"),
+        axis.text = element_text(color = "white", size=12, hjust = 0.5, family="sans"),
+        axis.ticks = element_line(color="white"), 
+        panel.grid.major = element_line(color="white"), #gridline color
+        panel.grid.minor = element_blank())
+```
+

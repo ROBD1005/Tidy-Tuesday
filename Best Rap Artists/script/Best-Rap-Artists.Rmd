@@ -1,0 +1,67 @@
+---
+title: "Best Female Rappers"
+author: "Robert Dellinger"
+date: "5/11/2022"
+output: html_document
+---
+
+#Load Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(patchwork)
+library(tidytext)
+
+```
+
+# Download Data
+
+```{r Bee Data}
+
+polls <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/polls.csv')
+rankings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/rankings.csv')
+
+```
+
+#Data Wrangling
+
+```{r}
+female.rapper.tracks <- rankings  %>% 
+  filter(gender == "female") %>% 
+  select(title, year) %>% 
+  group_by(year) %>% 
+  tally()
+```
+
+#Plot 
+
+```{r Female Rappers Plot}
+
+female.rappers.plot <- female.rapper.tracks %>% 
+  ggplot() +
+  aes(x = year, y = n)+
+  geom_col(fill="orange")+
+  labs(y = "Number of Tracks", x="Year", title = "Number of Top Ranked Tracks Released by Female Rappers \n Between 1980 and 2000",  subtitle = "Data Visualization by Rob") +
+  theme_minimal() +
+  theme(plot.margin = margin(1, .75, 1, .75, "cm"),
+        plot.background = element_rect(fill = "black"),
+        axis.text = element_text(color = "white", size = 12),
+        axis.title.x = element_text(size = 12),
+        panel.grid = element_blank(),
+        text = element_text(color = "white"),
+        plot.title.position = "plot",
+        strip.text = element_text(colour = 'white'))
+
+
+female.rappers.plot
+
+
+```
+
+

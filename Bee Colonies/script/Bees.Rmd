@@ -1,0 +1,80 @@
+---
+title: "Bees"
+author: "Robert Dellinger"
+date: "5/11/2022"
+output: html_document
+---
+
+#Load Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(sf)
+library(dplyr)
+
+```
+
+# Download Data
+
+```{r Bee Data}
+
+colony <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/colony.csv')
+stressor <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/stressor.csv')
+
+```
+
+#Data Wrangling
+
+```{r}
+
+
+colony.clean <- colony %>% 
+  replace_na(list(colony_added = 0)) %>% 
+  replace_na(list(colony_lost = 0)) %>% 
+  mutate(season = case_when(months == "January-March" ~ "Winter",
+                            months == "April-June" ~ "Spring",
+                            months == "July-September" ~ "Summer",
+                            months == "October-December" ~ "Fall")) %>% 
+    filter(year < 2021)
+
+colony.clean.calculations <- colony.clean %>% 
+  rowwise() %>% #rowwise calculation
+  mutate(colony_change_pct = (colony_added - colony_lost)/ colony_n) %>% #calculate change
+  drop_na(colony_change_pct) %>% #drop na
+  select(year, season, state, colony_change_pct) #excluding state to average nationally
+  
+
+colony.means <- colony.clean.calculations %>% 
+  group_by(season, year) %>% # group by season and year to average across states
+  summarise(mean_colony_change_percent=mean(colony_change_pct),
+            sd=sd(colony_change_pct)) #national change in colonies
+
+
+
+
+```
+
+```{r}
+
+
+colony.means.plot <- ggplot(colony.means, aes(x=season, y=mean_colony_change_percent, fill=season)) + 
+  geom_bar (stat="identity",position = position_dodge(0)) +
+  scale_y_continuous(breaks = c(-.30,-.20,-.10,0,.10,.20,.30),limits = c(-.30,.30), labels = scales::percent)+
+  theme_bw()+
+  theme(axis.text=element_text(size=7),
+        axis.title=element_text(size=10),
+        title=element_text(size=10, face="bold"))+
+  facet_wrap(~year)+
+  labs(title = "Bee Colony Change Shows Seasonal Variation (2015-2020)", 
+  subtitle = "Percent Change in the United States Average Bee Colony Size",
+  legend.title ="Season")+
+  xlab(label = "Season")+
+  ylab(label = "Percent Change in Colonies (%)")
+
+colony.means.plot
+
+```

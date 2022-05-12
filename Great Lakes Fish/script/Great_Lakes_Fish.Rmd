@@ -1,0 +1,82 @@
+---
+title: "Great Lakes Fish"
+author: "Robert Dellinger"
+date: "5/11/2022"
+output: html_document
+---
+
+#Load Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(magick)
+library(grid)
+library(ggstream)
+library(see)
+library(ggplot2)
+
+
+```
+
+# Download Data
+
+```{r Fish Data}
+
+fishing <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-08/fishing.csv')
+stocked <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-08/stocked.csv')
+
+```
+
+# Data Wrangling
+
+```{r}
+
+fish.data <- fishing %>% 
+  mutate(across(where(is.character), as.factor)) %>%  #convert characters to factors
+  drop_na(grand_total) #drop NAs
+
+fish.clean <- fish.data %>%
+  group_by(species) %>% #group by species
+  summarize(total = sum(grand_total)) %>%#sum of the totals
+  arrange(-total) #arrange by totals
+
+fish <- as_vector(fish.clean$species[c(1:5)]) #selecting the top five fish
+
+fish.clean.subset <- fish.data %>%
+  filter(species == fish,
+         year >= 1900) %>% 
+  group_by(year, lake, species) %>% 
+  summarize(total = sum(grand_total)) 
+
+
+colnames(fish.clean.subset) <- c("Year","Lake", "Species", "Total") # changing column names
+
+
+```
+
+
+
+```{r, Plotting Fish Data}
+
+ggplot(fish.clean.subset, aes(Year, Total, fill = Species)) + #import subset data
+  geom_stream() + #create a stream graph
+  facet_wrap(~Lake, scales = "free", ncol = 1, strip.position = "left") +  #facet wrap
+  see::scale_color_material_d(name = "Species")+ #colorscale 
+  labs(x="Year", y="Total", title = "Totals of The Top Five Fish Observed in The Great Lakes",
+    caption = "Visualization: Rob Dellinger | Data: Great Lakes Fishery Commission") + 
+  theme_minimal()+
+  theme(plot.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.25, size=15),
+        plot.margin = unit(c(0.5, 1, 0.5, 1), "cm"), #top, right, bottom, left
+        panel.grid.major =element_blank(),
+        legend.position = "bottom", 
+        legend.box.just = "center", #adjusting legend
+        legend.key.size = unit(0.2, "cm"),
+        axis.text = element_text(size=5, hjust = 0.5),
+        axis.ticks = element_blank(),
+        axis.title = element_text(size=10))
+
+```
+

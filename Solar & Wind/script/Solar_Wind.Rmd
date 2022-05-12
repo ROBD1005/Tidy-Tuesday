@@ -1,0 +1,78 @@
+---
+title: "Solar & Wind"
+author: "Robert Dellinger"
+date: "5/11/2022"
+output: html_document
+---
+
+#Load Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(grid)
+library(dplyr)
+library(sf)
+library(cowplot)
+library(ggthemes)
+library(waffle)
+library(ggtext)
+library(see)
+
+```
+
+# Download Data
+
+```{r Solar/Wind Data}
+
+average_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/average_cost.csv')
+
+```
+
+
+# Wrangle Data
+
+```{r}
+
+cost <- average_cost %>%  #converting names and values
+  pivot_longer(cols = 2:4, names_to = "type", values_to = "value_MWh") %>% 
+  filter(year != 2021) %>% #filter year
+  mutate(type = str_remove(type, "_mwh"), #remove mwh from string
+         type = str_to_title(type), #converts to title
+         MWh = as.integer(round(value_MWh, 0))) %>% #round value and rename column
+         select(year, type, MWh) %>% 
+  group_by(type, year) %>% 
+  summarise(MWh=mean(MWh))
+
+  cost.2010 <- cost %>% 
+    filter(year == 2010)
+  
+ cost.2020 <- cost %>% 
+    filter(year >= 2020)
+```
+
+# Making a Plot
+```{r}
+
+ ggplot(data=cost) +
+  geom_line(aes(x = year, y = MWh, color = type)) +
+  ylab(label="Megawatt/Hour Cost ($)") +
+  xlab(label="Year") +
+  scale_colour_manual(values=c(Wind="#339999",Gas="#CC0033", Solar="#FF9933"))+
+  labs(title = "Megawatt/Hour Cost of Wind, Solar, and Gas Energy in the US", 
+       caption = "Visualization: Rob Dellinger | Data Source: Berkeley Lab", col="Type") +
+  scale_x_continuous(breaks = seq(2009, 2020, 1)) + 
+  scale_y_continuous(labels = scales::dollar) +
+  theme_modern() +
+  theme(plot.title = element_markdown(color = "#333333", hjust=0.5),
+        plot.subtitle = element_markdown(color = "#333333"),
+        legend.position = "bottom",
+        legend.background = element_rect(color = NA),
+        axis.text = element_text(size=10))
+    
+ 
+```
+
+

@@ -1,0 +1,67 @@
+---
+title: "Plastic Pollution"
+author: "Robert Dellinger"
+date: "5/11/2022"
+output: html_document
+---
+
+#Load Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(grid)
+library(dplyr)
+library(sf)
+library(cowplot)
+
+```
+
+# Download Data
+
+```{r Plastic Data}
+
+plastics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-26/plastics.csv')
+
+```
+
+
+# Wrangling Data
+
+```{r Wrangling Data}
+
+plastics <- plastics[which(plastics$year == "2020"),] #selecting plastic for the year 2020
+
+plastics.country <- aggregate(x = plastics[,5:11], by = list(plastics$country), FUN = sum)
+
+colnames(plastics.country) <- c("country","hdpe","ldpe","o","pet","pp","ps","pvc")
+
+plastics.clean <- data.frame(Country=plastics.country$country, Total=rowSums(plastics.country[,c(2:8)])) 
+     
+plastics.clean <- plastics.clean %>% arrange(plastics.clean$Total)                       
+```
+
+```{r, Top 25}
+
+top.25<- plastics.clean[45:55,]
+
+top.25.plot<-ggplot(data=top.25, aes(x=reorder(Country, -Total), y=Total)) +
+  geom_bar(stat="identity", fill="steelblue")+
+  theme_minimal()+
+  theme(plot.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.25, size=15),
+        plot.margin = unit(c(0.5, 1, 0.5, 1), "cm"), #top, right, bottom, left
+        panel.grid.major =element_blank(),
+        axis.text = element_text(size=5),
+        axis.ticks = element_blank(),
+        axis.title = element_text(size=10)) + #colorscale 
+labs(x="Country", y="Total Plastics Found", title = "Countries with The Highest Quantities of Plastic
+      Discovered During Cleanups",
+    caption = "Visualization: Rob Dellinger | Data:  Break Free from Plastic")
+
+top.25.plot
+```
+
+

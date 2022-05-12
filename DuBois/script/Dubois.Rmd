@@ -1,0 +1,99 @@
+---
+title: '#DuBois Challenge 2022'
+author: "Robert Dellinger"
+date: "3/11/2022"
+output: html_document
+---
+
+#Install Packages
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidytuesdayR)
+library(tidyverse)
+library(ggtext)
+library(showtext)
+library(dplyr)
+library(gridExtra)
+library(grid)
+
+```
+
+#Download Data
+```{r}
+
+freed_slaves <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-16/freed_slaves.csv")
+
+unfree_free <- readr::read_csv("~/Documents/Tidy-Tuesday/DuBois/data/unfree_free.csv") #manipulated data in excel to add in population size of slaves and number of incarcerated people in the United States using data from the Bureau of Justice Statistics and U.S. Census Data
+
+```
+
+
+```{r, Data Wrangling, warning = FALSE, fig.path="~/Documents/Tidy-Tuesday/DuBois/output"}
+
+unfree_free <- unfree_free %>% 
+  mutate(Slave = as.numeric(Slave),
+         Prisoner =as.numeric(Prisoner)) %>% 
+  select(Year, Slave, Prisoner)
+
+slave.population <- ggplot(unfree_free, aes(Year, Slave))+
+  geom_area(fill="black") +
+  scale_y_continuous(name="Slave", labels = scales::comma) +
+   labs(title = ("SLAVE POPULATION IN THE UNITED STATES (1700-1865)"), size=10) +
+  annotate("text", x = 1865, y = 3500000, label = "ABOLITION OF \n CHATTEL SLAVERY", size=4.3, fontface="bold", hjust=1.5)+
+  theme(panel.background = element_rect(fill = "#428e6b"),
+        plot.background = element_rect(fill = "#D5C3AF", color=NA),
+        panel.grid = element_blank(),
+        axis.title=element_blank(),
+        axis.ticks=element_blank(),
+        axis.text.x=element_text(size=12, face="bold", colour="black"),
+        panel.grid.major.x = element_line(size=0.1),
+        legend.position="none",
+        plot.margin= margin(2, 1, 1, 1, "cm"),
+        plot.title = element_text(hjust = 0.5, vjust = 3, face="bold"))
+  
+  
+prison.population <- ggplot(unfree_free, aes(Year, Prisoner))+
+  geom_area(fill="black") +
+  scale_y_continuous(name= "Prisoner", labels = scales::comma)+
+      labs(title = ("PRISON POPULATION IN THE UNITED STATES  (1865-2020)"), size=10) +
+  annotate("text", x = 1865, y = 500000, label = "13TH AMENDMENT \n (REIMAGINATION OF SLAVERY)", size=5, fontface="bold", hjust=0.20)+
+    theme(panel.background = element_rect(fill = "#428e6b"),
+        plot.background = element_rect(fill = "#D5C3AF", color=NA),
+        panel.grid = element_blank(),
+        axis.title=element_blank(),
+        axis.ticks=element_blank(),
+        axis.text.x=element_text(size=12, face="bold", colour="black"),
+        panel.grid.major.x = element_line(size=0.1),
+        legend.position="none",
+        plot.margin= margin(2, 1, 1, 1, "cm"),
+        plot.title = element_text(hjust = 0.5, vjust = 3, face="bold"))
+
+
+```
+
+```{r, DuBois_Plot, warning=FALSE, fig.width=8, fig.height=4}
+
+cowplot::ggdraw(grid.arrange(slave.population, prison.population, nrow=1,
+top = textGrob("NUMBER OF UNFREE PEOPLE IN THE UNITED STATES", 
+               just = "center", y=-0.3, # center-aligned
+               gp = gpar(fontsize = 35, fill="#D5C3AF", fontface="bold")), # font
+bottom = textGrob("Data source: W.E.B. Du Bois, Bureau of Justice Statistics, and U.S. Census Data | Visualization:Rob Dellinger", x=0.05, y = 1, just = "left")))+
+  theme(plot.background = element_rect(fill="#D5C3AF"))
+  
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
